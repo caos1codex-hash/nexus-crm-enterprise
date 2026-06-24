@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export function Header() {
   const { theme, toggleTheme, toggleSidebar, searchOpen, setSearchOpen, setSearchQuery, searchQuery, notifications, markNotificationRead, markAllNotificationsRead } = useAppStore();
-  const { clients, opportunities, tasks } = useCRMStore();
+  const { clients, opportunities, tasks, calendarEvents, users } = useCRMStore();
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -45,34 +45,48 @@ export function Header() {
   const currentPath = useAppStore.getState().currentPath;
   const pageTitle = Object.entries(pathLabels).find(([k]) => currentPath.startsWith(k))?.[1] || 'Nexus CRM';
 
+  const onlineCount = users.filter(u => u.status === 'online').length;
+
   return (
     <>
-      <header className="h-16 border-b border-border bg-card/80 backdrop-blur-xl flex items-center justify-between px-6 sticky top-0 z-30">
-        <div className="flex items-center gap-4">
-          <button onClick={toggleSidebar} className="lg:hidden p-2 rounded-lg hover:bg-muted text-muted-foreground transition-colors">
+      <header className="h-14 border-b border-border bg-card/80 backdrop-blur-xl flex items-center justify-between px-5 sticky top-0 z-30">
+        <div className="flex items-center gap-3">
+          <button onClick={toggleSidebar} className="lg:hidden p-1.5 rounded-lg hover:bg-muted text-muted-foreground transition-colors">
             <Menu className="w-5 h-5" />
           </button>
-          <h1 className="text-lg font-semibold tracking-tight">{pageTitle}</h1>
+          <div>
+            <h1 className="text-[15px] font-semibold tracking-tight">{pageTitle}</h1>
+          </div>
+          {/* Live indicator */}
+          <div className="hidden md:flex items-center gap-1.5 ml-3 px-2.5 py-1 rounded-full bg-emerald-500/8 border border-emerald-500/15">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+            </span>
+            <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">{onlineCount} en línea</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => { setShowSearch(true); setSearchOpen(true); }}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-muted/50 text-muted-foreground text-sm hover:bg-muted transition-colors min-w-[200px] lg:min-w-[280px]"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-muted/30 text-muted-foreground text-sm hover:bg-muted/60 transition-colors w-[200px] lg:w-[260px]"
           >
-            <Search className="w-4 h-4" />
-            <span className="flex-1 text-left">Buscar...</span>
-            <kbd className="hidden sm:flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-background border border-border text-[10px] font-medium text-muted-foreground">
-              <Command className="w-3 h-3" />K
+            <Search className="w-3.5 h-3.5 flex-shrink-0" />
+            <span className="flex-1 text-left text-xs">Buscar...</span>
+            <kbd className="hidden sm:flex items-center gap-0.5 px-1 py-0.5 rounded bg-background border border-border text-[9px] font-medium text-muted-foreground">
+              <Command className="w-2.5 h-2.5" />K
             </kbd>
           </button>
           <button onClick={toggleTheme} className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
-            {theme === 'dark' ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
+            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
           <div ref={notifRef} className="relative">
             <button onClick={() => setShowNotifications(!showNotifications)} className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors relative">
-              <Bell className="w-[18px] h-[18px]" />
+              <Bell className="w-4 h-4" />
               {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">{unreadCount}</span>
+                <span className="absolute top-0.5 right-0.5 min-w-[16px] h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1">
+                  {unreadCount}
+                </span>
               )}
             </button>
             <AnimatePresence>
@@ -82,22 +96,27 @@ export function Header() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.96 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute right-0 top-full mt-2 w-96 bg-popover border border-border rounded-xl shadow-xl overflow-hidden z-50"
+                  className="absolute right-0 top-full mt-2 w-96 bg-popover border border-border rounded-xl shadow-2xl overflow-hidden z-50"
                 >
                   <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                    <span className="text-sm font-semibold">Notificaciones</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold">Notificaciones</span>
+                      {unreadCount > 0 && (
+                        <span className="text-[10px] font-bold bg-red-500/15 text-red-500 px-1.5 py-0.5 rounded-full">{unreadCount} nuevas</span>
+                      )}
+                    </div>
                     {unreadCount > 0 && (
-                      <button onClick={markAllNotificationsRead} className="text-xs text-primary hover:underline font-medium">Marcar todas leídas</button>
+                      <button onClick={markAllNotificationsRead} className="text-[11px] text-primary hover:underline font-medium">Marcar leídas</button>
                     )}
                   </div>
-                  <div className="max-h-[400px] overflow-y-auto">
+                  <div className="max-h-[380px] overflow-y-auto">
                     {notifications.slice(0, 6).map(n => (
-                      <button key={n.id} onClick={() => { markNotificationRead(n.id); if (n.link) navigate(n.link); setShowNotifications(false); }} className={cn("w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border/50 last:border-0", !n.read && "bg-primary/5")}>
+                      <button key={n.id} onClick={() => { markNotificationRead(n.id); if (n.link) navigate(n.link); setShowNotifications(false); }} className={cn("w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border/30 last:border-0", !n.read && "bg-primary/3")}>
                         <div className="flex items-start gap-3">
-                          <div className={cn("w-2 h-2 rounded-full mt-1.5 flex-shrink-0", n.type === 'success' && "bg-success", n.type === 'warning' && "bg-warning", n.type === 'error' && "bg-destructive", n.type === 'info' && "bg-primary")} />
+                          <div className={cn("w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0", n.type === 'success' && "bg-emerald-500", n.type === 'warning' && "bg-amber-500", n.type === 'error' && "bg-red-500", n.type === 'info' && "bg-blue-500")} />
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium truncate">{n.title}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>
+                            <p className="text-[13px] font-medium truncate">{n.title}</p>
+                            <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>
                           </div>
                         </div>
                       </button>
@@ -107,7 +126,10 @@ export function Header() {
               )}
             </AnimatePresence>
           </div>
-          <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-primary text-xs font-semibold ml-1 cursor-pointer">AR</div>
+          <div className="relative ml-0.5">
+            <div className="w-8 h-8 rounded-full bg-primary/12 flex items-center justify-center text-primary text-[11px] font-bold cursor-pointer hover:bg-primary/20 transition-colors">AR</div>
+            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-card" />
+          </div>
         </div>
       </header>
 
@@ -128,13 +150,13 @@ export function Header() {
               onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center gap-3 px-4 border-b border-border">
-                <Search className="w-4.5 h-4.5 text-muted-foreground flex-shrink-0" />
+                <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                 <input
                   autoFocus
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   placeholder="Buscar clientes, oportunidades, tareas..."
-                  className="flex-1 py-3.5 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                  className="flex-1 py-3 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
                 />
                 <kbd className="px-1.5 py-0.5 rounded bg-muted border border-border text-[10px] font-medium text-muted-foreground">ESC</kbd>
               </div>
